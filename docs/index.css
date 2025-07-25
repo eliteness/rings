@@ -336,6 +336,13 @@ footer{
 .c2a-one-button .c2abtn {
     width:  80% !important;
 }
+
+.c2a-two-pane {
+	display: grid;
+	grid-template-columns: auto;
+	font-size:0.6em;
+}
+
 .c2a-two-button {
 	display: grid;
 	grid-template-columns: 50% 50%;
@@ -679,6 +686,11 @@ button:disabled, .c2abtn:disabled {
 
 	.c2a {
 		width: 60%;
+	}
+
+	.c2a-two-pane {
+		display: grid;
+		grid-template-columns: auto auto;
 	}
 
 	#spotlight {
