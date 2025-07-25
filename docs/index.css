@@ -691,6 +691,7 @@ button:disabled, .c2abtn:disabled {
 	.c2a-two-pane {
 		display: grid;
 		grid-template-columns: auto auto;
+        font-size: initial;
 	}
 
 	#spotlight {
