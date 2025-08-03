@@ -15,9 +15,126 @@ window.addEventListener(
 
 document.addEventListener('DOMContentLoaded', function() {
     paintStatic();
+    initializeModernUI();
 });
 
+
+/**jeff.ai**
+let provider = null;
+let signer = null;
+
+window.addEventListener(
+	'load',
+	async function() {
+		console.log("=== PAGE LOAD DEBUG ===");
+		console.log("Initializing app...");
+		console.log("Window ethereum available:", !!window.ethereum);
+		console.log("Provider:", provider);
+		console.log("Signer:", signer);
+
+		// Auto-connect wallet first, then initialize app data
+		await autoConnectWallet();
+
+		// Initialize the app data after wallet connection
+		await dexstats();
+		arf();
+
+		// Simple auto-click on wallet connect button
+		setTimeout(() => {
+			console.log("=== AUTO-CLICK DEBUG ===");
+			console.log("Looking for connect button...");
+			const connectButton = document.getElementById('cw');
+			console.log("Connect button found:", connectButton);
+			console.log("Window ethereum:", window.ethereum);
+			console.log("Selected address:", window.ethereum?.selectedAddress);
+
+			if (connectButton && !window.ethereum?.selectedAddress) {
+				console.log("Auto-clicking wallet connect button...");
+				connectButton.click();
+				console.log("Click executed!");
+			} else {
+				console.log("Not clicking because:");
+				console.log("- Connect button exists:", !!connectButton);
+				console.log("- Already connected:", !!window.ethereum?.selectedAddress);
+			}
+		}, 2000); // Wait 2 seconds for everything to load
+
+		// Listen for wallet account changes
+		if (window.ethereum) {
+			window.ethereum.on('accountsChanged', async function (accounts) {
+				console.log('Account changed:', accounts);
+				if (accounts.length > 0) {
+					await gubs();
+				} else {
+					// User disconnected wallet
+					if ($("cw")) {
+						$("cw").innerHTML = `<button id="cw_og" class="btn btn-primary">Connect Wallet</button>`;
+					}
+				}
+			});
+
+			window.ethereum.on('chainChanged', async function (chainId) {
+				console.log('Chain changed:', chainId);
+				if (Number(chainId) === CHAINID) {
+					await gubs();
+				} else {
+					notice(`Wrong network detected!<br>Please switch to chain ID ${CHAINID} (${CHAIN_NAME}).`);
+				}
+			});
+		}
+	},
+	false
+);
+document.addEventListener('DOMContentLoaded', function() {
+    paintStatic();
+    initializeModernUI();
+});
+**jeff.ai**/
+
+// Modern UI initialization
+function initializeModernUI() {
+    // Setup input change handlers for real-time updates
+    const zapAmtInput = $('zap-amt');
+    if (zapAmtInput) {
+        zapAmtInput.addEventListener('input', updateZapOutput);
+    }
+
+    // Hide legacy tab system
+    const tabElements = document.querySelectorAll('.tabcontent');
+    tabElements.forEach(el => el.style.display = 'none');
+
+    // Add click handlers for better UX
+    setupClickHandlers();
+}
+
+function updateZapOutput() {
+    const zapAmt = parseFloat($('zap-amt').value) || 0;
+    const exchangeRate = Number(STATE.global?.base_per_wrap || 1e18) / 1e18;
+    const output = zapAmt / exchangeRate;
+
+    if ($('zap-output')) {
+        $('zap-output').textContent = output.toFixed(6);
+    }
+}
+
+function setupClickHandlers() {
+    // Add hover effects and click feedback
+    document.querySelectorAll('.action-card').forEach(card => {
+        card.addEventListener('click', function(e) {
+            if (!e.target.closest('button') && !e.target.closest('input')) {
+                // Add click animation
+                this.style.transform = 'scale(0.98)';
+                setTimeout(() => {
+                    this.style.transform = '';
+                }, 150);
+            }
+        });
+    });
+}
+
+// Legacy tab function for backwards compatibility
 function openTab(evt, tabName) {
+    // This is kept for backwards compatibility but hidden in modern UI
     var i, tabcontent, tablinks;
     tabcontent = document.getElementsByClassName("tabcontent");
     for (i = 0; i < tabcontent.length; i++) {
@@ -27,31 +144,14 @@ function openTab(evt, tabName) {
     for (i = 0; i < tablinks.length; i++) {
         tablinks[i].className = tablinks[i].className.replace(" active", "");
     }
-    document.getElementById("tablinks_"+tabName).className+=" active";
-    document.getElementById(tabName).style.display = "block";
-    //evt?.currentTarget?.className += " active";
-    //window.location = "#"+tabName;
+    if (document.getElementById("tablinks_"+tabName)) {
+        document.getElementById("tablinks_"+tabName).className+=" active";
+    }
+    if (document.getElementById(tabName)) {
+        document.getElementById(tabName).style.display = "block";
+    }
 }
 
-
-
-
-
-/*
-function fornum(n,d)
-{
-	_n=(Number(n)/10**Number(d));
-	n_=_n;
-	if(_n>1e18){n_=(_n/1e18).toFixed(2)+" Qt."}
-	else if(_n>1e15){n_=(_n/1e15).toFixed(2)+" Qd."}
-	else if(_n>1e12){n_=(_n/1e12).toFixed(2)+" Tn."}
-	else if(_n>1e9){n_=(_n/1e9).toFixed(2)+" Bn."}
-	else if(_n>1e6){n_=(_n/1e6).toFixed(2)+" Mn."}
-	else if(_n>1e3){n_=(_n/1e3).toFixed(2)+" Th."}
-	else if(_n>0){n_=(_n/1e0).toFixed(5)+""}
-	return(n_);
-}
-*/
 function fornum(n,d) {
 	_n=(Number(n)/10**Number(d));
 	n_=_n;
@@ -72,6 +172,155 @@ function fornum6(n,f) {
 	return (Number(n)).toLocaleString(undefined,{maximumFractionDigits:f}) ;
 }
 
+/**jeff.ai**
+async function autoConnectWallet() {
+	console.log("=== AUTO-CONNECT DEBUG ===");
+	console.log("Starting auto-connect...");
+
+	// Wait a bit for wallet to be ready
+	await new Promise(resolve => setTimeout(resolve, 1000));
+	console.log("Waited 1 second for wallet to be ready");
+
+	// Check if wallet is already connected
+	if (window.ethereum && window.ethereum.selectedAddress) {
+		console.log("Wallet already connected:", window.ethereum.selectedAddress);
+		await cw2(); // Update UI with connected wallet
+		return;
+	}
+
+	// Check if any Ethereum provider is available
+	if (!window.ethereum) {
+		console.log("No wallet detected for auto-connect");
+		return;
+	}
+
+			// Try to auto-connect - first try eth_accounts (silent), then eth_requestAccounts (with popup)
+		try {
+			console.log("Attempting auto-connect...");
+
+			// Initialize provider first
+			provider = new ethers.providers.Web3Provider(window.ethereum);
+			signer = provider.getSigner();
+			console.log("Provider and signer initialized");
+
+			// First try silent connection
+			let accounts = await window.ethereum.request({ method: 'eth_accounts' });
+			console.log("eth_accounts result:", accounts);
+
+			// If no accounts found, try requesting accounts (this will show popup)
+			if (!accounts || accounts.length === 0) {
+				console.log("No silent connection found, requesting accounts...");
+				accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+				console.log("eth_requestAccounts result:", accounts);
+			}
+
+		if (accounts && accounts.length > 0) {
+			console.log("Auto-connecting to wallet:", accounts[0]);
+
+			// Set up provider and signer
+			provider = new ethers.providers.Web3Provider(window.ethereum);
+			signer = provider.getSigner();
+
+			// Check if we're on the correct network
+			const chainId = await window.ethereum.request({ method: 'eth_chainId' });
+			console.log("Current chain ID:", chainId, "Expected:", CHAINID);
+			if (Number(chainId) !== CHAINID) {
+				console.log("Wrong network detected, switching...");
+				try {
+					await window.ethereum.request({
+						method: 'wallet_switchEthereumChain',
+						params: [{ chainId: '0x' + CHAINID.toString(16) }],
+					});
+				} catch (switchError) {
+					console.log("Network switch failed:", switchError);
+					return;
+				}
+			}
+
+			// Update wallet display
+			const walletAddress = accounts[0];
+			if ($("cw")) {
+				$("cw").innerHTML = `<button class="btn btn-primary">${walletAddress.substr(0,6)}...${walletAddress.substr(-4)}</button>`;
+			}
+
+			// Update user data - wrap in try/catch to handle any errors
+			try {
+				await gubs();
+				console.log("Auto-connect successful!");
+			} catch (error) {
+				console.log("Error updating user data:", error);
+				// Still consider it successful if wallet is connected
+				console.log("Auto-connect successful (wallet connected, data update failed)");
+			}
+		} else {
+			console.log("No accounts found for auto-connect");
+		}
+	} catch (error) {
+		console.log("Auto-connect failed:", error);
+		// If user rejects the connection, that's fine - just log it
+		if (error.code === 4001) {
+			console.log("User rejected wallet connection");
+		}
+	}
+}
+
+async function cw() {
+	let cs = await cw2(); cs?console.log("Good to Transact"):cw2();
+	cw2();
+}
+
+async function cw2() {
+	// Check for any Ethereum provider (MetaMask, Rabby, etc.)
+	if (!window.ethereum) {
+		notice(`No wallet detected!<br>Please install MetaMask, Rabby, or another Web3 wallet and refresh the page.`);
+		return(0);
+	}
+
+	try {
+		// Request account access - this will trigger the wallet popup
+		const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+
+		if (accounts.length > 0) {
+			console.log("Wallet connected successfully:", accounts[0]);
+
+			// Set up provider and signer
+			provider = new ethers.providers.Web3Provider(window.ethereum);
+			signer = provider.getSigner();
+
+			// Check if we're on the correct network
+			const chainId = await window.ethereum.request({ method: 'eth_chainId' });
+			if (Number(chainId) !== CHAINID) {
+				notice(`Wrong network detected!<br>Please switch to chain ID ${CHAINID} (${CHAIN_NAME}).`);
+				return(0);
+			}
+
+			// Update wallet display
+			const walletAddress = accounts[0];
+			if ($("cw")) {
+				$("cw").innerHTML = `<button class="btn btn-primary">${walletAddress.substr(0,6)}...${walletAddress.substr(-4)}</button>`;
+			}
+
+			// Update user data
+			gubs();
+			return(1);
+
+		} else {
+			console.log("No accounts found");
+			notice("No accounts found. Please connect your wallet.");
+			return(0);
+		}
+
+	} catch (error) {
+		console.error("Wallet connection error:", error);
+		if (error.code === 4001) {
+			notice("Wallet connection cancelled by user.");
+		} else {
+			notice(`Wallet connection failed!<br>Error: ${error.message}`);
+		}
+		return(0);
+	}
+}
+**jeff.ai**/
 
 function fornum2(n,d)
 {
@@ -88,11 +337,26 @@ function fornum2(n,d)
 	return(n_);
 }
 
-
 function notice(c) {
-	window.location = "#note"
-	$("content1").innerHTML = c
-	console.log(c)
+	// Create a modern notification instead of using the old modal
+	const notification = document.createElement('div');
+	notification.className = 'notification';
+	notification.innerHTML = `
+		<div class="notification-content">
+			${c}
+			<button class="notification-close" onclick="this.parentElement.parentElement.remove()">&times;</button>
+		</div>
+	`;
+	document.body.appendChild(notification);
+
+	// Auto-remove after 5 seconds
+	setTimeout(() => {
+		if (notification.parentElement) {
+			notification.remove();
+		}
+	}, 5000);
+
+	console.log(c);
 }
 
 async function sleep(ms) {
@@ -100,6 +364,9 @@ async function sleep(ms) {
 }
 
 const timeFormat = (timestamp) => {const seconds = Math.floor((Date.now() - timestamp) / 1000);const prefix = seconds < 0 ? "For the next " : "Expired ";const absSeconds = Math.abs(seconds);return prefix + (absSeconds < 60 ? absSeconds + " seconds" : absSeconds < 3600 ? Math.floor(absSeconds / 60) + " minutes" : absSeconds < 86400 ? Math.floor(absSeconds / 3600) + " hours" : absSeconds < 2592000 ? Math.floor(absSeconds / 86400) + " days" : absSeconds < 31536000 ? Math.floor(absSeconds / 2592000) + " months" : Math.floor(absSeconds / 31536000) + " years") + (seconds < 0 ? "" : " ago");};
+
+
+
 
 
 
@@ -215,6 +482,9 @@ async function cw2() {
 }
 
 
+
+
+
 LPABI = ["function balanceOf(address) public view returns(uint)","function metadata() public view returns(uint,uint,uint,uint,bool,address,address)","function getAssetPrice(address) public view returns(uint)","function approve(address,uint)","function allowance(address,address) public view returns(uint)","function earned(address,address) public view returns(uint)","function earnings(address,address) public view returns(uint)","function name() public view returns(string)","function symbol() public view returns(string)","function tvl() public view returns(uint)","function tvlDeposits() public view returns(uint)","function apr() public view returns(uint)","function totalSupply() public view returns(uint)","function deposit(uint)","function withdraw(uint)","function depositAll()","function withdrawAll()","function mint(uint)","function redeem(uint)","function mintAll()","function redeemAll()"]
 
 DEPOSITOR_ABI = [{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"user","type":"address"},{"indexed":false,"internalType":"uint256","name":"nft","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"veAmount","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"shares","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"md","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"mb","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"wen","type":"uint256"}],"name":"Deposit","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"user","type":"address"},{"indexed":false,"internalType":"uint256","name":"nft","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"veAmount","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"shares","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"rd","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"rb","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"wen","type":"uint256"}],"name":"Withdraw","type":"event"},{"inputs":[],"name":"ELTOKEN","outputs":[{"internalType":"contract IERC20","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"ID","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"VENFT","outputs":[{"internalType":"contract IVotingEscrow","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"VOTER","outputs":[{"internalType":"contract IVoter","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"_mi","type":"uint256"}],"name":"copyVotesFrom","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"dao","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"_id","type":"uint256"}],"name":"deposit","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"floor","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"_user","type":"address"},{"internalType":"address","name":"_farm","type":"address"}],"name":"getAllowance","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"_contract","type":"address"}],"name":"getApr","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"getCurrentEpoch","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"_contract","type":"address"}],"name":"getTvl","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"_user","type":"address"},{"internalType":"address[]","name":"_farms","type":"address[]"},{"internalType":"address[]","name":"_pricing","type":"address[]"}],"name":"info","outputs":[{"internalType":"uint256[]","name":"","type":"uint256[]"},{"internalType":"address[]","name":"","type":"address[]"},{"internalType":"uint256[]","name":"","type":"uint256[]"},{"internalType":"uint256[]","name":"","type":"uint256[]"},{"internalType":"uint256[]","name":"","type":"uint256[]"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"_vo","type":"address"},{"internalType":"address","name":"_el","type":"address"},{"internalType":"uint256","name":"_id","type":"uint256"}],"name":"initialize","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"mintingFeesToBurn","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"mintingFeesToDao","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"","type":"address"},{"internalType":"address","name":"","type":"address"},{"internalType":"uint256","name":"","type":"uint256"},{"internalType":"bytes","name":"","type":"bytes"}],"name":"onERC721Received","outputs":[{"internalType":"bytes4","name":"","type":"bytes4"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"paused","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"price","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"_id","type":"uint256"}],"name":"quote","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"_inc","type":"uint256"}],"name":"rawQuote","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"redemptionFeesToBurn","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"redemptionFeesToDao","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"_t","type":"address"},{"internalType":"uint256","name":"_a","type":"uint256"}],"name":"rescue","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"d","type":"address"}],"name":"setDAO","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"uint256","name":"_md","type":"uint256"},{"internalType":"uint256","name":"_mb","type":"uint256"},{"internalType":"uint256","name":"_rd","type":"uint256"},{"internalType":"uint256","name":"_rb","type":"uint256"}],"name":"setFees","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"uint256","name":"_f","type":"uint256"}],"name":"setFloor","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"uint256","name":"_id","type":"uint256"}],"name":"setID","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"bool","name":"_p","type":"bool"}],"name":"setPaused","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"_m","type":"address"},{"internalType":"bool","name":"_b","type":"bool"}],"name":"setVoteManager","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address[]","name":"_p","type":"address[]"},{"internalType":"uint256[]","name":"_w","type":"uint256[]"}],"name":"vote","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"","type":"address"}],"name":"voteManager","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"voteReset","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"uint256","name":"_tamt","type":"uint256"}],"name":"withdraw","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"nonpayable","type":"function"}]
@@ -223,119 +493,40 @@ CTOKEN_ABI = [{"inputs":[{"internalType":"address","name":"underlying_","type":"
 
 EL_27_ABI = [{"inputs": [],"name": "LA","outputs": [{"internalType": "contract ILA","name": "","type": "address"}],"stateMutability": "view","type": "function"},{"inputs": [{"internalType": "contract IP","name": "p","type": "address"}],"name": "bucketList","outputs": [{"internalType": "uint24[]","name": "","type": "uint24[]"}],"stateMutability": "view","type": "function"},{"inputs": [{"internalType": "uint24[]","name": "inp","type": "uint24[]"}],"name": "cast_24_256","outputs": [{"internalType": "uint256[]","name": "","type": "uint256[]"}],"stateMutability": "pure","type": "function"},{"inputs": [{"internalType": "address","name": "","type": "address"}],"name": "farmType","outputs": [{"internalType": "uint256","name": "","type": "uint256"}],"stateMutability": "view","type": "function"},{"inputs": [{"internalType": "contract IFarmland","name": "farm","type": "address"},{"internalType": "address","name": "user","type": "address"},{"internalType": "address","name": "guard","type": "address"}],"name": "getClset","outputs": [{"internalType": "uint256[13]","name": "ret","type": "uint256[13]"}],"stateMutability": "view","type": "function"},{"inputs": [{"internalType": "address[3][]","name": "_id","type": "address[3][]"}],"name": "getClsets","outputs": [{"internalType": "uint256[13][]","name": "","type": "uint256[13][]"}],"stateMutability": "view","type": "function"},{"inputs": [{"internalType": "contract IFarmland","name": "farm","type": "address"},{"internalType": "contract IELM","name": "elm","type": "address"},{"internalType": "address","name": "user","type": "address"}],"name": "getElmaCompoundFarm","outputs": [{"internalType": "uint256[18]","name": "ret","type": "uint256[18]"}],"stateMutability": "view","type": "function"},{"inputs": [{"internalType": "contract IFarmland[]","name": "_farms","type": "address[]"},{"internalType": "contract IELM[]","name": "_elm","type": "address[]"},{"internalType": "address","name": "_user","type": "address"}],"name": "getElmaCompoundFarms","outputs": [{"internalType": "uint256[18][]","name": "","type": "uint256[18][]"}],"stateMutability": "view","type": "function"},{"inputs": [{"internalType": "contract IFarmland","name": "farm","type": "address"},{"internalType": "address","name": "user","type": "address"}],"name": "getSimpleFarm","outputs": [{"internalType": "uint256[7]","name": "ret","type": "uint256[7]"}],"stateMutability": "view","type": "function"},{"inputs": [{"internalType": "contract IFarmland[]","name": "_farms","type": "address[]"},{"internalType": "address","name": "_user","type": "address"}],"name": "getSimpleFarms","outputs": [{"internalType": "uint256[7][]","name": "","type": "uint256[7][]"}],"stateMutability": "view","type": "function"},{"inputs": [{"internalType": "address","name": "_user","type": "address"},{"internalType": "address","name": "_pool","type": "address"}],"name": "getTotalPosition","outputs": [{"internalType": "uint256","name": "x","type": "uint256"},{"internalType": "uint256","name": "y","type": "uint256"}],"stateMutability": "view","type": "function"},{"inputs": [{"internalType": "contract ILA","name": "_la","type": "address"}],"name": "initializer","outputs": [],"stateMutability": "nonpayable","type": "function"},{"inputs": [],"name": "owner","outputs": [{"internalType": "address","name": "","type": "address"}],"stateMutability": "view","type": "function"},{"inputs": [{"internalType": "address","name": "user","type": "address"},{"internalType": "address","name": "_pair","type": "address"}],"name": "positionOf","outputs": [{"internalType": "uint256[]","name": "bIds","type": "uint256[]"},{"internalType": "uint256[]","name": "amountsX","type": "uint256[]"},{"internalType": "uint256[]","name": "amountsY","type": "uint256[]"},{"internalType": "uint256[]","name": "liquidities","type": "uint256[]"}],"stateMutability": "view","type": "function"},{"inputs": [{"internalType": "address","name": "_f","type": "address"},{"internalType": "uint256","name": "_t","type": "uint256"}],"name": "setFarmType","outputs": [],"stateMutability": "nonpayable","type": "function"},{"inputs": [{"internalType": "address","name": "_wrapper","type": "address"},{"internalType": "address","name": "_vault","type": "address"},{"internalType": "address","name": "_vaultPool","type": "address"}],"name": "setVaultPools","outputs": [],"stateMutability": "nonpayable","type": "function"},{"inputs": [{"internalType": "address","name": "","type": "address"}],"name": "vaultPools","outputs": [{"internalType": "address","name": "","type": "address"}],"stateMutability": "view","type": "function"},{"inputs": [{"internalType": "address","name": "","type": "address"}],"name": "vaults","outputs": [{"internalType": "address","name": "","type": "address"}],"stateMutability": "view","type": "function"}]
 
-
 async function paintStatic() {
+    // Set active tab (first one by default)
+    const firstTab = document.getElementsByClassName('tablinks')[0];
+    if (firstTab) firstTab.click();
 
-    document.getElementsByClassName('tablinks')[0].click();
+	// Populate all the label elements with proper names
+	document.querySelectorAll('[id^="l-ve-"]').forEach(el => el.innerHTML = VENFT_NAME);
+	document.querySelectorAll('[id^="l-base-"]').forEach(el => el.innerHTML = BASE_NAME);
+	document.querySelectorAll('[id^="l-wrap-"]').forEach(el => el.innerHTML = WRAP_NAME);
+	document.querySelectorAll('[id^="l-sct-"]').forEach(el => el.innerHTML = SCT_NAME);
 
-	$("l-ve-1").innerHTML = VENFT_NAME;
-	$("l-ve-2").innerHTML = VENFT_NAME;
-	$("l-ve-3").innerHTML = VENFT_NAME;
-	$("l-ve-4").innerHTML = VENFT_NAME;
-	$("l-ve-5").innerHTML = VENFT_NAME;
-	$("l-ve-6").innerHTML = VENFT_NAME;
-	$("l-ve-7").innerHTML = VENFT_NAME;
-	$("l-ve-8").innerHTML = VENFT_NAME;
-	$("l-ve-9").innerHTML = VENFT_NAME;
-
-	$("l-base-1").innerHTML = BASE_NAME;
-	$("l-base-2").innerHTML = BASE_NAME;
-
-	$("l-wrap-1").innerHTML = WRAP_NAME;
-	$("l-wrap-2").innerHTML = WRAP_NAME;
-	$("l-wrap-3").innerHTML = WRAP_NAME;
-	$("l-wrap-4").innerHTML = WRAP_NAME;
-	$("l-wrap-5").innerHTML = WRAP_NAME;
-	$("l-wrap-6").innerHTML = WRAP_NAME;
-	$("l-wrap-7").innerHTML = WRAP_NAME;
-	$("l-wrap-8").innerHTML = WRAP_NAME;
-	$("l-wrap-9").innerHTML = WRAP_NAME;
-	$("l-wrap-10").innerHTML = WRAP_NAME;
-	$("l-wrap-11").innerHTML = WRAP_NAME;
-	$("l-wrap-12").innerHTML = WRAP_NAME;
-
-	$("l-sct-1").innerHTML = SCT_NAME;
-	$("l-sct-2").innerHTML = SCT_NAME;
-	$("l-sct-3").innerHTML = SCT_NAME;
-	$("l-sct-4").innerHTML = SCT_NAME;
-	$("l-sct-5").innerHTML = SCT_NAME;
-
-	$("footer-contracts").innerHTML = `
-		<a target="_blank" href="${EXPLORE}/token/${BASE}">${BASE_NAME}</a>
-		・ <a target="_blank" href="${EXPLORE}/token/${VENFT}">${VENFT_NAME}</a>
-		・ <a target="_blank" href="${EXPLORE}/token/${WRAP}">${WRAP_NAME}</a>
-		・ <a target="_blank" href="${EXPLORE}/address/${STKSCT_TELLER}">Teller</a>
-		・ <a target="_blank" href="${EXPLORE}/address/${ZAP_SCT}">Zapper</a>
-		<br><br>
-	`;
-		//<a target="_blank" href="${DOCS_LINK}">Read our Docs</a>
-		//・ <a href="${EXPLORE}/address/${DEPOSITOR}">Depositor</a>
-
-	$("partner-pools-table-title").innerHTML = "Discover " + PARTNER_POOLS.length + " opportunities to Earn with your eliteRingsScUSD!";
-
-	$("partner-pools-table").innerHTML += PARTNER_POOLS.map(pool => `
-    <div class="c2a90-row c2a90-row-port" onclick="window.open('${pool.link}','_blank')">
-        <div class="c2a90-row-item">
-            <div><img src="${pool.platforms[0].icon}"> ${pool.platforms[0].name}</div>
-            <div class="c2a90-row-item-subtext">${pool.platforms[0].subtext}</div>
-        </div>
-        <div class="c2a90-row-item">
-            ${pool.tokens.map(t => `<div><img src="${t.icon}"> ${t.name}</div>`).join('')}
-        </div>
-        <div class="c2a90-row-item">
-            ${pool.rewards.map(r => `<div><img src="${r.icon}"> ${r.name}</div>`).join('')}
-        </div>
-        <div class="c2a90-row-item-subtext-desc">
-            ${pool.desc[0].maintext}
-        </div>
-    </div>
-`).join('');
-
-
-/*
-	$("headline-props").innerHTML = `
-		${BASE_NAME}
-		<img src="${BASE_LOGO}">
-		⇢
-		${MARKET_NAME}
-		<img src="${MARKET_LOGO}">
-	`;
-
-	$("topstat-basename-1").innerHTML = BASE_NAME;
-	$("topstat-BASE_NAME-2").innerHTML = BASE_NAME;
-
-	$("deposit-WRAP_NAME-1").innerHTML = WRAP_NAME;
-	$("deposit-WRAP_NAME-2").innerHTML = WRAP_NAME;
-	$("deposit-BASE_NAME-3").innerHTML = BASE_NAME;
-	$("deposit-BASE_NAME-4").innerHTML = BASE_NAME;
-	$("deposit-BASE_NAME-5").innerHTML = BASE_NAME;
-	$("deposit-BASE_NAME-6").innerHTML = BASE_NAME;
-	$("deposit-WRAP_NAME-7").innerHTML = WRAP_NAME;
-	$("deposit-WRAP_NAME-8").innerHTML = WRAP_NAME;
-
-	$("stake-WRAP_NAME-1").innerHTML = WRAP_NAME;
-	$("stake-WRAP_NAME-2").innerHTML = WRAP_NAME;
-
-	$("unstake-WRAP_NAME-1").innerHTML = WRAP_NAME;
-	$("unstake-WRAP_NAME-2").innerHTML = WRAP_NAME;
-	$("unstake-WRAP_NAME-3").innerHTML = WRAP_NAME;
-
-	$("redeem-WRAP_NAME-1").innerHTML = WRAP_NAME;
-	$("redeem-BASE_NAME-2").innerHTML = BASE_NAME;
-	$("redeem-WRAP_NAME-3").innerHTML = WRAP_NAME;
-	$("redeem-BASE_NAME-4").innerHTML = BASE_NAME;
-*/
+	// Populate footer contracts
+	if ($("footer-contracts")) {
+		$("footer-contracts").innerHTML = `
+			<a target="_blank" href="${EXPLORE}/token/${BASE}" class="social-link">${BASE_NAME}</a>
+			<a target="_blank" href="${EXPLORE}/token/${VENFT}" class="social-link">${VENFT_NAME}</a>
+			<a target="_blank" href="${EXPLORE}/token/${WRAP}" class="social-link">${WRAP_NAME}</a>
+			<a target="_blank" href="${EXPLORE}/address/${STKSCT_TELLER}" class="social-link">Teller</a>
+			<a target="_blank" href="${EXPLORE}/address/${ZAP_SCT}" class="social-link">Zapper</a>
+		`;
+	}
 }
 
 async function dexstats() {
+	// Only proceed if we have a valid provider
+	if (!provider) {
+		console.log("No provider available for dexstats");
+		return;
+	}
+
 	_MGR_P = new ethers.Contract( DEPOSITOR , DEPOSITOR_ABI , provider );
 
 	_inf = await _MGR_P.info(SAFE_ADDR,[],[]);
-	//STATE.user = {
-	//	wrap_bal : BigInt(_inf[0][0]),
-	//	wrap_allow_mgr: BigInt(_inf[0][11]),
-	//	venft_bal : BigInt(_inf[0][12]),
-	//}
+
 	STATE.global = {
 		wrap_ts: BigInt(_inf[0][1]),
 		base_per_wrap: BigInt(_inf[0][2]),
@@ -350,78 +541,16 @@ async function dexstats() {
 		fees_mdb: BigInt(_inf[0][10]),
 	}
 
+	// Update stats display
+	if ($("topstat-ve-amt")) $("topstat-ve-amt").innerHTML = fornum(STATE.global.venft_amt, BASE_DEC);
+	if ($("topstat-wrap-ts")) $("topstat-wrap-ts").innerHTML = fornum(STATE.global.wrap_ts, WRAP_DEC);
+	if ($("topstat-base-per-wrap")) $("topstat-base-per-wrap").innerHTML = (Number(STATE.global.base_per_wrap)/1e18).toFixed(6);
+	if ($("topstat-dom")) $("topstat-dom").innerHTML = (Number(STATE.global.venft_amt)/Number(STATE.global.venft_ts)*100).toFixed(2)+"%";
+	if ($("mint-fee")) $("mint-fee").innerHTML = (Number(STATE.global.fees_mdb)/1e18*100).toFixed(2) + "%";
+	if ($("redeem-fee")) $("redeem-fee").innerHTML = ((Number(STATE.global.fees_rd)+Number(STATE.global.fees_rb))/1e18*100).toFixed(2) + "%";
 
-	$("topstat-ve-amt").innerHTML = fornum(STATE.global.venft_amt, BASE_DEC);
-	$("topstat-wrap-ts").innerHTML = fornum(STATE.global.wrap_ts, WRAP_DEC);
-	$("topstat-base-per-wrap").innerHTML = (Number(STATE.global.base_per_wrap)/1e18).toFixed(6);
-	$("topstat-dom").innerHTML = (Number(STATE.global.venft_amt)/Number(STATE.global.venft_ts)*100).toFixed(6)+"%";
-	$("mint-fee").innerHTML = (Number(STATE.global.fees_mdb)/1e18*100) + "%";
-	$("redeem-fee").innerHTML = ((Number(STATE.global.fees_rd)+Number(STATE.global.fees_rb))/1e18*100) + "%";
-
-
-
-
-
-	/*
-	_EL_27 = new ethers.Contract("0x1b1c9a41a96dE931c7508BD2C653C57C63cD32a4", EL_27_ABI, provider);
-	_ds = await _EL_27.getElmaCompoundFarm( FARM , DEPOSITOR , "0x0000000000000000000000000000000000001234" );
-
-	ds_farmtvl = (Number(_ds[4])/1e18);
-	ds_farmapr = (Number(_ds[5])/1e18);
-	ds_ctokenapr = (Number(_ds[6])/1e18) * 100;
-	ds_farmts = (Number(_ds[3])) / (10**DECIMAL);
-	ds_wrapts = (Number(_ds[2])) / (10**DECIMAL);
-	ds_wrapprice = ds_farmtvl / ds_farmts;
-	ds_wrapmktcap = (ds_wrapts * ds_wrapprice )
-	ds_cash = (Number(_ds[8])) / 10**DECIMAL;
-	ds_borrowed = (Number(_ds[9])) / 10**DECIMAL;
-	ds_txs = Number(_ds[7]);
-
-	$("topstat-tvl").innerHTML = "$" + fornum6(ds_wrapmktcap, 0)
-	$("topstat-staked").innerHTML = "$" + fornum6(ds_farmtvl,0)
-	$("topstat-cash").innerHTML = "$" + fornum6(ds_cash, 0)
-	$("topstat-borrowed").innerHTML = "$" + fornum6(ds_borrowed, 0)
-
-	_sftmxapr = 0;
-
-	if(BASE_NAME == "SFTMX") {
-		$("topstat-apr-native-div").style.display="block";
-		_sftmxdata = await fetch("https://backend-v3.beets-ftm-node.com/", {"headers": { "content-type": "application/json",}, "body": "{\"query\":\"query {\\n  sftmxGetStakingData {\\n    exchangeRate\\n    stakingApr\\n  }\\n}\\n\"}", "method": "POST",});
-		_sftmxdata = await _sftmxdata.json()
-		_sftmxapr = Number(_sftmxdata.data.sftmxGetStakingData.stakingApr) * 100;
-		$("topstat-apr-native").innerHTML = "+"+fornum6(_sftmxapr, _sftmxapr>10?2:4) + "% 🎶"
-	}
-
-	$("topstat-apr-yt").innerHTML = fornum6(ds_ctokenapr, (ds_ctokenapr)>10?2:4) + "%"
-	$("topstat-apr-pt").innerHTML = fornum6(ds_farmapr, (ds_farmapr)>10?2:4) + "%"
-
-	//$("topstat-tvl").innerHTML = (Number(_ds[1])/(10**DECIMAL)).toLocaleString(undefined,{maximumFractionDigits:2})
-
-	$("topstat-dom").innerHTML = fornum6(ds_farmtvl/(ds_cash+ds_borrowed)*100, 4) + "%"
-
-	$("stake-tvl").innerHTML =
-		"$"
-		+ fornum6(ds_farmtvl,2)
-		+ " in Total Deposits are earning at an APR of "
-		+ fornum6(ds_farmapr, ds_farmapr>10?2:4)
-		+ "%"
-	;
-
-	if( $("claim-info").innerHTML == "" ) {
-		for(i=0;i<TEARNED.length;i++) {
-			$("claim-info").innerHTML += `
-				<div><img height="20px" src="${LOGOS+TEARNED[i].toLowerCase()}.png" style="vertical-align:middle;"/> ${TEARNED_NAME[i]}</div>
-            	<div class="hint"id="claim-${i}-old">Claimed: 0.000000000000000000</div>
-            	<div class="hint"id="claim-${i}-pen">Pending: 0.000000000000000000</div>
-            	<div class="hint"id="claim-${i}-tot">Total: 0.000000000000000000</div>
-            	<br><br>
-			`;
-		}
-	}
-	*/
 	return;
 }
-
 
 async function arf(){
 	let c=0;
@@ -438,16 +567,25 @@ async function arf(){
 		16_000
 	);
 }
+
 async function gubs() {
+	// Ensure we have a valid signer
+	if (!signer || !window.ethereum?.selectedAddress) {
+		console.log("No signer or selected address available for gubs");
+		return;
+	}
+
 	_MGR = new ethers.Contract( DEPOSITOR , DEPOSITOR_ABI , signer );
 	_sctbal = (await (new ethers.Contract(SCT,LPABI,signer)).balanceOf(window.ethereum.selectedAddress));
 	_inf = await _MGR.info(window.ethereum.selectedAddress,[],[]);
+
 	STATE.user = {
 		wrap_bal : BigInt(_inf[0][0]),
 		wrap_allow_mgr: BigInt(_inf[0][11]),
 		venft_bal : BigInt(_inf[0][12]),
 		sct_bal : BigInt(_sctbal),
 	}
+
 	STATE.global = {
 		wrap_ts: BigInt(_inf[0][1]),
 		base_per_wrap: BigInt(_inf[0][2]),
@@ -473,48 +611,55 @@ async function gubs() {
 		] )
 	;
 
+	// Update all displays
+	if ($("topstat-ve-amt")) $("topstat-ve-amt").innerHTML = fornum(STATE.global.venft_amt, BASE_DEC);
+	if ($("topstat-wrap-ts")) $("topstat-wrap-ts").innerHTML = fornum(STATE.global.wrap_ts, WRAP_DEC);
+	if ($("topstat-base-per-wrap")) $("topstat-base-per-wrap").innerHTML = (Number(STATE.global.base_per_wrap)/1e18).toFixed(6);
+	if ($("topstat-dom")) $("topstat-dom").innerHTML = (Number(STATE.global.venft_amt)/Number(STATE.global.venft_ts)*100).toFixed(2)+"%";
+	if ($("mint-fee")) $("mint-fee").innerHTML = (Number(STATE.global.fees_mdb)/1e18*100).toFixed(2) + "%";
+	if ($("redeem-fee")) $("redeem-fee").innerHTML = ((Number(STATE.global.fees_rd)+Number(STATE.global.fees_rb))/1e18*100).toFixed(2) + "%";
 
-	$("topstat-ve-amt").innerHTML = fornum(STATE.global.venft_amt, BASE_DEC);
-	$("topstat-wrap-ts").innerHTML = fornum(STATE.global.wrap_ts, WRAP_DEC);
-	$("topstat-base-per-wrap").innerHTML = (Number(STATE.global.base_per_wrap)/1e18).toFixed(6);
-	$("topstat-dom").innerHTML = (Number(STATE.global.venft_amt)/Number(STATE.global.venft_ts)*100).toFixed(6)+"%";
-	$("mint-fee").innerHTML = (Number(STATE.global.fees_mdb)/1e18*100) + "%";
-	$("redeem-fee").innerHTML = ((Number(STATE.global.fees_rd)+Number(STATE.global.fees_rb))/1e18*100) + "%";
+	// Update balance displays
+	if ($("zap-bal")) $("zap-bal").innerHTML = `Balance: ${ fornum5(STATE.user.sct_bal, SCT_DEC) } ${ SCT_NAME}`;
+	if ($("mint-bal")) $("mint-bal").innerHTML = `Balance: ${ Number(STATE.user.venft_bal) } ${ VENFT_NAME} NFTs`;
+	if ($("redeem-bal")) $("redeem-bal").innerHTML = `Balance: ${ fornum5(STATE.user.wrap_bal, WRAP_DEC) } ${ WRAP_NAME}`;
 
+	// Update NFT table with modern design
+	if ($("mint-table") && STATE.user.nfts) {
+		$("mint-table").innerHTML = STATE.user.nfts.map( (e,i) => {
+			const expectedOutput = Number(e[1]) / (Number(STATE.global.base_per_wrap)/1e18);
+			return `
+				<div class="mint-table-row" onclick="mint(${e[0]},${i})">
+					<div class="mint-table-row-id">${VENFT_NAME} #${ e[0] }</div>
+					<div>
+						<button class="btn btn-primary submit">Convert</button>
+					</div>
+					<div>
+						<img style='height:20px;position:relative;top:4px' src="${VENFT_LOGO}">
+						Deposit
+					</div>
+					<div>
+						${ fornum5(e[1], BASE_DEC) } ${ BASE_NAME }
+					</div>
+					<div>
+						→
+						<img style='height:20px;position:relative;top:4px' src="${WRAP_LOGO}">
+						Gets
+					</div>
+					<div>
+						${ fornum5(expectedOutput, WRAP_DEC) } ${ WRAP_NAME }
+					</div>
+				</div>
+			`}).join("")
+	}
 
-	$("zap-bal").innerHTML = `Balance: ${ fornum5(STATE.user.sct_bal, SCT_DEC) } ${ SCT_NAME}`;
-	$("mint-bal").innerHTML = `Balance: ${ Number(STATE.user.venft_bal) } ${ VENFT_NAME}`;
-	$("stake-bal").innerHTML = `Balance: ${ fornum5(STATE.user.wrap_bal, WRAP_DEC) } ${ WRAP_NAME}`;
-	$("redeem-bal").innerHTML = `Balance: ${ fornum5(STATE.user.wrap_bal, WRAP_DEC) } ${ WRAP_NAME}`;
-
-	$("mint-table").innerHTML = STATE.user.nfts.map( (e,i) => { return `
-		<div class="mint-table-row">
-			<div class="mint-table-row-id"> #${ e[0] } </div>
-			<div class="">
-				<img style='height:20px;position:relative;top:4px' src="${VENFT_LOGO}">
-				Convert ${ fornum5(e[1], BASE_DEC) } ${ BASE_NAME }
-			</div>
-			<div class="">
-				<img style='height:20px;position:relative;top:4px' src="${WRAP_LOGO}">
-				Get ${ fornum5( Number(e[1]) / (Number(STATE.global.base_per_wrap)/1e18), WRAP_DEC) } ${ WRAP_NAME }
-			</div>
-			<div class="c2abtn submit" onclick="mint(${e[0]},${i})">Deposit</div>
-		</div>
-	`}).join("<br>")
-
+	// Update the zap output display in real-time
+	updateZapOutput();
 
 	return;
 }
 
-
-
-
-
-
-
-
-
-
+// Main transaction functions (keeping all existing logic)
 async function zap(ismax) {
 	_SCT = new ethers.Contract(SCT, LPABI, signer);
 	_SCT_ZAP = new ethers.Contract(ZAP_SCT, ["function zapSCT(uint,uint) returns(uint)"],signer);
@@ -529,9 +674,7 @@ async function zap(ismax) {
 
 	if(ismax) {
 		_oamt = al[1];
-	}
-
-	else {
+	} else {
 		_oamt = $("zap-amt").value;
 		if(!isFinite(_oamt) || _oamt<1/(10**SCT_DEC)){notice(`Invalid ${SCT_NAME} amount!`); return;}
 		_oamt = BigInt(Math.floor(_oamt * (10**SCT_DEC)))
@@ -539,63 +682,77 @@ async function zap(ismax) {
 
 	_wrapout = _oamt * (10n**18n) / STATE.global.base_per_wrap;
 
-	if(Number(_oamt)>Number(al[1])) {notice(`<h2>Insufficient Balance!</h2><h3>Desired Amount:</h3>${Number(_oamt)/(10**SCT_DEC)}<br><h3>Actual Balance:</h3>${Number(al[1])/(10**SCT_DEC)}<br><br><b>Please reduce the amount and retry again, or accumulate some more ${SCT_NAME}.`);return}
+	if(Number(_oamt)>Number(al[1])) {
+		notice(`<h3>Insufficient Balance!</h3><div>Desired Amount: ${Number(_oamt)/(10**SCT_DEC)}</div><div>Actual Balance: ${Number(al[1])/(10**SCT_DEC)}</div><br><div>Please reduce the amount and retry again.</div>`);
+		return;
+	}
 
 	if(Number(_oamt)>Number(al[0])){
 		notice(`
 			<h3>Approval required</h3>
-			Please grant ${SCT_NAME} allowance.<br><br>
-			<h4><u><i>Confirm this transaction in your wallet!</i></u></h4>
+			<p>Please grant ${SCT_NAME} allowance.</p>
+			<div><strong>Confirm this transaction in your wallet!</strong></div>
 		`);
-		//let _tr = await _WRAP.approve(FARM,_oamt);
 		let _tr = await _SCT.approve(ZAP_SCT, ethers.constants.MaxUint256);
 		console.log(_tr);
 		notice(`
 			<h3>Submitting Approval Transaction!</h3>
-			<h4><a target="_blank" href="${EXPLORE}/tx/${_tr.hash}">View on Explorer</a></h4>
+			<p><a target="_blank" href="${EXPLORE}/tx/${_tr.hash}" class="btn btn-outline">View on Explorer</a></p>
 		`);
 		_tw = await _tr.wait()
 		console.log(_tw)
 		notice(`
 			<h3>Approval Completed!</h3>
-			<br>Spending rights of ${Number(_oamt)/(10**SCT_DEC)} ${SCT_NAME} granted.<br>
-			<h4><a target="_blank" href="${EXPLORE}/tx/${_tr.hash}">View on Explorer</a></h4>
-			<br><br>
-			Please confirm the next step with your wallet provider now.
+			<p>Spending rights of ${Number(_oamt)/(10**SCT_DEC)} ${SCT_NAME} granted.</p>
+			<p><a target="_blank" href="${EXPLORE}/tx/${_tr.hash}" class="btn btn-outline">View on Explorer</a></p>
+			<br><p>Please confirm the next step with your wallet provider now.</p>
 		`);
 	}
 
 	notice(`
-		<h3>Order Summary</h3>
-		<b>Zapping ${SCT_NAME}</b><br>
-		<img style='height:20px;position:relative;top:4px' src="${SCT_LOGO}"> ${SCT_NAME} to Zap: <b>${fornum5(_oamt,SCT_DEC)}</b><br>
-		<br><b>Expected to Get:</b><br>
-		<img style='height:20px;position:relative;top:4px' src="${WRAP_LOGO}"> <u>${ fornum5(_wrapout,WRAP_DEC).toLocaleString() } ${WRAP_NAME}</u><br><br>
-		<h4><u><i>Please Confirm this transaction in your wallet!</i></u></h4>
+		<h3>Transaction Summary</h3>
+		<div class="transaction-summary">
+			<div class="summary-item">
+				<img src="${SCT_LOGO}" alt="${SCT_NAME}" style="width:20px;height:20px;">
+				<span>${SCT_NAME} to Convert: <strong>${fornum5(_oamt,SCT_DEC)}</strong></span>
+			</div>
+			<div class="summary-arrow">↓</div>
+			<div class="summary-item">
+				<img src="${WRAP_LOGO}" alt="${WRAP_NAME}" style="width:20px;height:20px;">
+				<span>Expected to Receive: <strong>${ fornum5(_wrapout,WRAP_DEC) } ${WRAP_NAME}</strong></span>
+			</div>
+		</div>
+		<br><div><strong>Please confirm this transaction in your wallet!</strong></div>
 	`);
+
 	let _tr = await (ismax ? _SCT_ZAP.zapSCT(al[1], _wrapout * 999n / 1000n) : _SCT_ZAP.zapSCT(_oamt, _wrapout * 999n / 1000n));
 	console.log(_tr);
+
 	notice(`
-		<h3>Order Submitted!</h3>
-		<h4>Zapping ${SCT_NAME}</h4>
-		<img style='height:20px;position:relative;top:4px' src="${SCT_LOGO}"> Zapping ${SCT_NAME}: <b>${fornum5(_oamt,SCT_DEC)}</b><br>
-		<br><b>Expected to Get:</b><br>
-		<img style='height:20px;position:relative;top:4px' src="${WRAP_LOGO}"> <u>${ fornum5(_wrapout,WRAP_DEC).toLocaleString() } ${WRAP_NAME}</u><br><br>
-		<h4><a target="_blank" href="${EXPLORE}/tx/${_tr.hash}">View on Explorer</a></h4>
+		<h3>Transaction Submitted!</h3>
+		<p>Converting ${SCT_NAME} to ${WRAP_NAME}...</p>
+		<p><a target="_blank" href="${EXPLORE}/tx/${_tr.hash}" class="btn btn-outline">View on Explorer</a></p>
 	`);
+
 	_tw = await _tr.wait();
 	console.log(_tw)
+
 	notice(`
-		<h3>Order Completed!</h3>
-		<img style='height:20px;position:relative;top:4px' src="${BASE_LOGO}"> ${SCT_NAME} Zapped: <b>${fornum5(_oamt,SCT_DEC)}</b><br>
-		<br><b>Expected to Get:</b><br>
-		<img style='height:20px;position:relative;top:4px' src="${WRAP_LOGO}"> <u>${ fornum5(_wrapout,WRAP_DEC).toLocaleString() } ${WRAP_NAME}</u><br><br>
-		<h4><a target="_blank" href="${EXPLORE}/tx/${_tr.hash}">View on Explorer</a></h4>
+		<h3>Conversion Completed!</h3>
+		<div class="transaction-summary">
+			<div class="summary-item">
+				<img src="${SCT_LOGO}" alt="${SCT_NAME}" style="width:20px;height:20px;">
+				<span>${SCT_NAME} Converted: <strong>${fornum5(_oamt,SCT_DEC)}</strong></span>
+			</div>
+			<div class="summary-item">
+				<img src="${WRAP_LOGO}" alt="${WRAP_NAME}" style="width:20px;height:20px;">
+				<span>${WRAP_NAME} Received: <strong>${ fornum5(_wrapout,WRAP_DEC) }</strong></span>
+			</div>
+		</div>
+		<p><a target="_blank" href="${EXPLORE}/tx/${_tr.hash}" class="btn btn-primary">View on Explorer</a></p>
 	`);
 	gubs();
 }
-
-
 
 async function mint(_id, _idi) {
 	ve = new ethers.Contract(VENFT, ["function voted(uint) public view returns(bool)","function isApprovedOrOwner(address,uint) public view returns(bool)","function approve(address,uint)"], signer);
@@ -605,205 +762,123 @@ async function mint(_id, _idi) {
 		ve.voted(_id),
 	]);
 	console.log("alvo: ",alvo);
+
 	if(alvo[0]==false) {
 		notice(`
 			<h3>Approval required</h3>
-			${WRAP_NAME} Depositor requires your approval to complete this conversion.<br><br>
-			<h4><u><i>Please Confirm this transaction in your wallet!</i></u></h4>
+			<p>${WRAP_NAME} Depositor requires your approval to complete this conversion.</p>
+			<div><strong>Please confirm this transaction in your wallet!</strong></div>
 		`);
 		let _tr = await ve.approve(DEPOSITOR,_id);
 		console.log(_tr);
 		notice(`
 			<h3>Submitting Approval Transaction!</h3>
-			<h4><a target="_blank" href="${EXPLORE}/tx/${_tr.hash}">View on Explorer</a></h4>
+			<p><a target="_blank" href="${EXPLORE}/tx/${_tr.hash}" class="btn btn-outline">View on Explorer</a></p>
 		`);
 		_tw = await _tr.wait()
 		console.log(_tw)
 		notice(`
 			<h3>Approval Completed!</h3>
-			<h4><a target="_blank" href="${EXPLORE}/tx/${_tr.hash}">View on Explorer</a></h4>
-			<br><br>
-			Please continue to the next steps now.
+			<p><a target="_blank" href="${EXPLORE}/tx/${_tr.hash}" class="btn btn-outline">View on Explorer</a></p>
+			<br><p>Please continue to the next steps now.</p>
 		`);
 	}
+
 	if(alvo[1]==true) {
 		notice(`
 			<h3>Vote-Reset required</h3>
-			${WRAP_NAME} requires your veNFT to be in a non-voted state to complete this conversion.
-			<br><br>
-			Resetting your Votes..
-			<br><br>
-			<h4><u><i>Please Confirm this transaction in your wallet!</i></u></h4>
+			<p>${WRAP_NAME} requires your veNFT to be in a non-voted state to complete this conversion.</p>
+			<p>Resetting your votes...</p>
+			<div><strong>Please confirm this transaction in your wallet!</strong></div>
 		`);
 		voter = new ethers.Contract(VOTER, ["function reset(uint)"], signer);
 		let _tr = await voter.reset(_id);
 		console.log(_tr);
 		notice(`
 			<h3>Submitting Vote-Reset Transaction!</h3>
-			<h4><a target="_blank" href="${EXPLORE}/tx/${_tr.hash}">View on Explorer</a></h4>
+			<p><a target="_blank" href="${EXPLORE}/tx/${_tr.hash}" class="btn btn-outline">View on Explorer</a></p>
 		`);
 		_tw = await _tr.wait()
 		console.log(_tw)
 		notice(`
 			<h3>Vote-Reset Completed!</h3>
-			<h4><a target="_blank" href="${EXPLORE}/tx/${_tr.hash}">View on Explorer</a></h4>
-			<br><br>
-			Please confirm the Trade at your wallet provider now.
+			<p><a target="_blank" href="${EXPLORE}/tx/${_tr.hash}" class="btn btn-outline">View on Explorer</a></p>
+			<br><p>Please confirm the conversion in your wallet now.</p>
 		`);
 	}
 
-
-
 	qd = await Promise.all([
-		STATE.global.venft_amt , //{amount: _mi[0][7]}, //ve.locked(ID),
-		STATE.user.nfts[_idi][1] , //ve.locked(_id),
-		STATE.global.wrap_ts , //wrap.totalSupply(),
-		STATE.user.nfts[_idi][4] , //ve.balanceOfNFT(_id)
+		STATE.global.venft_amt,
+		STATE.user.nfts[_idi][1],
+		STATE.global.wrap_ts,
+		STATE.user.nfts[_idi][4],
 	]);
+
 	console.log("sell.quoted: ",qd);
 	_base = Number(qd[0]);
 	_inc = Number(qd[1]);
 	_ts = Number(qd[2]);
 	_amt = (_inc * _ts) / _base;
 	_tlw = (Number( STATE.user.nfts[_idi][2] )/86400/7 - Date.now()/86400000/7).toFixed();
-	_q = [
-		_amt,
-		_inc,
-		_tlw,
-	];
-	notice(`
-		<h3>Order Summary</h3>
-		<b>Converting veNFT:</b><br>
+	_q = [ _amt, _inc, _tlw ];
 
-		<img style='height:20px;position:relative;top:4px' src="${BASE_LOGO}"> NFT Token ID: <u>#<b>${_id}</b></u><br>
-		<img style='height:20px;position:relative;top:4px' src="${BASE_LOGO}"> Amount Locked: <u>${ fornum5(_q[1],BASE_DEC).toLocaleString() } ${BASE_NAME}</u><br>
-		<img style='height:20px;position:relative;top:4px' src="https://ftm.guru/icons/lock.svg">Time to Unlock: <u>${Number(_q[2])} Weeks</u> from now<br><br>
-		<b>Expected to Get:</b><br>
-		<img style='height:20px;position:relative;top:4px' src="${WRAP_LOGO}"> <u>${ fornum5(_q[0],WRAP_DEC).toLocaleString() } ${WRAP_NAME}</u><br><br><br><br>
-		<h4><u><i>Please Confirm this transaction in your wallet!</i></u></h4>
+	notice(`
+		<h3>Conversion Summary</h3>
+		<div class="transaction-summary">
+			<div class="summary-item">
+				<img src="${BASE_LOGO}" alt="${BASE_NAME}" style="width:20px;height:20px;">
+				<span>NFT Token ID: <strong>#${_id}</strong></span>
+			</div>
+			<div class="summary-item">
+				<img src="${BASE_LOGO}" alt="${BASE_NAME}" style="width:20px;height:20px;">
+				<span>Amount Locked: <strong>${ fornum5(_q[1],BASE_DEC) } ${BASE_NAME}</strong></span>
+			</div>
+			<div class="summary-item">
+				<span>Time to Unlock: <strong>${Number(_q[2])} Weeks</strong> from now</span>
+			</div>
+			<div class="summary-arrow">↓</div>
+			<div class="summary-item">
+				<img src="${WRAP_LOGO}" alt="${WRAP_NAME}" style="width:20px;height:20px;">
+				<span>Expected to Get: <strong>${ fornum5(_q[0],WRAP_DEC) } ${WRAP_NAME}</strong></span>
+			</div>
+		</div>
+		<br><div><strong>Please confirm this transaction in your wallet!</strong></div>
 	`);
+
 	_DEPOSITOR = new ethers.Contract(DEPOSITOR, ["function deposit(uint)"], signer);
 	let _tr = await _DEPOSITOR.deposit(_id);
 	console.log(_tr);
+
 	notice(`
-		<h3>Order Submitted!</h3>
-		<br><h4>Minting ${WRAP_NAME}</h4>
-		<img style='height:20px;position:relative;top:4px' src="${WRAP_LOGO}"> <u>${ fornum5(_q[0],WRAP_DEC).toLocaleString() } ${WRAP_NAME}</u><br>
-		<br><h4>Melting your ${VENFT_NAME} veNFT</h4>
-		<img style='height:20px;position:relative;top:4px' src="${BASE_LOGO}"> <u>veNFT #<b>${_id}</b></u>,<br>Containing <u>${ fornum5(_q[1],BASE_DEC).toLocaleString() } ${BASE_NAME}</u>,<br>Locked for <u>${Number(_q[2])} weeks</u>.<br><br>
-		<h4><a target="_blank" href="${EXPLORE}/tx/${_tr.hash}">View on Explorer</a></h4>
+		<h3>Conversion Submitted!</h3>
+		<p>Converting veNFT #${_id} to ${WRAP_NAME}...</p>
+		<p><a target="_blank" href="${EXPLORE}/tx/${_tr.hash}" class="btn btn-outline">View on Explorer</a></p>
 	`);
+
 	_tw = await _tr.wait();
 	console.log(_tw)
+
 	notice(`
-		<h3>Order Completed!</h3>
-		Minted <img style='height:20px;position:relative;top:4px' src="${WRAP_LOGO}"> <u>${fornum5(_q[0],WRAP_DEC)} ${WRAP_NAME}</u> for <img style='height:20px;position:relative;top:4px' src="${BASE_LOGO}"> <u>veNFT #<b>${_id}</b></u>.
-		<br><br>
-		<h4><a target="_blank" href="${EXPLORE}/tx/${_tr.hash}">View on Explorer</a></h4>
+		<h3>Conversion Completed!</h3>
+		<div class="transaction-summary">
+			<div class="summary-item">
+				<span>Converted veNFT: <strong>#${_id}</strong></span>
+			</div>
+			<div class="summary-item">
+				<img src="${WRAP_LOGO}" alt="${WRAP_NAME}" style="width:20px;height:20px;">
+				<span>Received: <strong>${fornum5(_q[0],WRAP_DEC)} ${WRAP_NAME}</strong></span>
+			</div>
+		</div>
+		<p><a target="_blank" href="${EXPLORE}/tx/${_tr.hash}" class="btn btn-primary">View on Explorer</a></p>
 	`)
 	gubs()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-return;
-/*
-	alert(ismax)
-	_BASE = new ethers.Contract(BASE, LPABI, signer);
-	_WRAP = new ethers.Contract(WRAP, LPABI, signer);
-	_DEPOSITOR = new ethers.Contract(DEPOSITOR, LPABI, signer);
-
-	al = await Promise.all([
-		_BASE.allowance(window.ethereum.selectedAddress, DEPOSITOR),
-		_BASE.balanceOf(window.ethereum.selectedAddress)
-	]);
-
-	_oamt = null;
-
-	if(ismax) {
-		_oamt = al[1];
-	}
-
-	else {
-		_oamt = $("mint-amt").value;
-		if(!isFinite(_oamt) || _oamt<1/(10**DECIMAL)){notice(`Invalid ${BASE_NAME} amount!`); return;}
-		_oamt = BigInt(Math.floor(_oamt * (10**DECIMAL)))
-	}
-
-	if(Number(_oamt)>Number(al[1])) {notice(`<h2>Insufficient Balance!</h2><h3>Desired Amount:</h3>${Number(_oamt)/(10**DECIMAL)}<br><h3>Actual Balance:</h3>${Number(al[1])/(10**DECIMAL)}<br><br><b>Please reduce the amount and retry again, or accumulate some more ${BASE_NAME}.`);return;}
-
-	if(Number(_oamt)>Number(al[0])){
-		notice(`
-			<h3>Approval required</h3>
-			Please grant ${BASE_NAME} allowance.<br><br>
-			<h4><u><i>Confirm this transaction in your wallet!</i></u></h4>
-		`);
-		let _tr = await _BASE.approve(DEPOSITOR,_oamt);
-		console.log(_tr);
-		notice(`
-			<h3>Submitting Approval Transaction!</h3>
-			<h4><a target="_blank" href="${EXPLORE}/tx/${_tr.hash}">View on Explorer</a></h4>
-		`);
-		_tw = await _tr.wait()
-		console.log(_tw)
-		notice(`
-			<h3>Approval Completed!</h3>
-			<br>Spending rights of ${Number(_oamt)/(10**DECIMAL)} ${BASE_NAME} granted.<br>
-			<h4><a target="_blank" href="${EXPLORE}/tx/${_tr.hash}">View on Explorer</a></h4>
-			<br><br>
-			Please confirm the next step with your wallet provider now.
-		`);
-	}
-
-	notice(`
-		<h3>Order Summary</h3>
-		<b>Minting ${WRAP_NAME}</b><br>
-
-		<img style='height:20px;position:relative;top:4px' src="${BASE_LOGO}"> ${BASE_NAME} to Deposit: <b>${fornum5(_oamt,DECIMAL)}</b><br>
-		<img style='height:20px;position:relative;top:4px' src="${WRAP_LOGO}"> ${WRAP_NAME} Expected: <b>${fornum5(_oamt,DECIMAL)}</b><br>
-
-		<h4><u><i>Please Confirm this transaction in your wallet!</i></u></h4>
-	`);
-	let _tr = await _DEPOSITOR.mint(_oamt,{gasLimit:BigInt(1_200_000)});
-	console.log(_tr);
-	notice(`
-		<h3>Order Submitted!</h3>
-		<h4>Minting ${WRAP_NAME}</h4>
-		<img style='height:20px;position:relative;top:4px' src="${BASE_LOGO}"> ${BASE_NAME} Depositing: <b>${fornum5(_oamt,DECIMAL)}</b><br>
-		<img style='height:20px;position:relative;top:4px' src="${WRAP_LOGO}"> ${WRAP_NAME} Expecting: <b>${fornum5(_oamt,DECIMAL)}</b><br>
-		<h4><a target="_blank" href="${EXPLORE}/tx/${_tr.hash}">View on Explorer</a></h4>
-	`);
-	_tw = await _tr.wait();
-	console.log(_tw)
-	notice(`
-		<h3>Order Completed!</h3>
-		<img style='height:20px;position:relative;top:4px' src="${BASE_LOGO}"> ${BASE_NAME} Deposited: <b>${fornum5(_oamt,DECIMAL)}</b><br>
-		<img style='height:20px;position:relative;top:4px' src="${WRAP_LOGO}"> ${WRAP_NAME} Received: <b>${fornum5(_oamt,DECIMAL)}</b><br>
-		<br><br>
-		<h4><a target="_blank" href="${EXPLORE}/tx/${_tr.hash}">View on Explorer</a></h4>
-	`);
-	gubs();
-*/
+	return;
 }
 
 async function redeem(ismax) {
 	if( (Date.now() % 604800e3) > (604800e3 - 86400e3) ) {
-		notice(`Redeeming ${WRAP_NAME} to ${VE_NAME} is not available on Wednesdays..<br><br>Please try tomorrow!`);
+		notice(`<h3>Redemption Temporarily Unavailable</h3><p>Redeeming ${WRAP_NAME} to ${VENFT_NAME} is not available on Wednesdays.</p><p>Please try tomorrow!</p>`);
+		return;
 	}
 
 	_BASE = new ethers.Contract(BASE, LPABI, signer);
@@ -820,81 +895,113 @@ async function redeem(ismax) {
 
 	if(ismax) {
 		_oamt = al[1];
-	}
-
-	else {
+	} else {
 		_oamt = $("redeem-amt").value;
 		if(!isFinite(_oamt)){notice(`Invalid ${WRAP_NAME} amount!`); return;}
 		_oamt = BigInt(Math.floor(_oamt * (10**DECIMAL)))
 	}
 
-	if(Number(_oamt)>Number(al[1])) {notice(`<h2>Insufficient Balance!</h2><h3>Desired Amount:</h3>${Number(_oamt)/(10**DECIMAL)}<br><h3>Actual Balance:</h3>${al[1]/(10**DECIMAL)}<br><br><b>Please reduce the amount and retry again, or accumulate some more ${WRAP_NAME}.`);return;}
+	if(Number(_oamt)>Number(al[1])) {
+		notice(`<h3>Insufficient Balance!</h3><div>Desired Amount: ${Number(_oamt)/(10**DECIMAL)}</div><div>Actual Balance: ${al[1]/(10**DECIMAL)}</div><br><div>Please reduce the amount and retry again.</div>`);
+		return;
+	}
 
 	if(Number(_oamt)>Number(al[0])){
 		notice(`
 			<h3>Approval required</h3>
-			Please grant ${WRAP_NAME} allowance.<br><br>
-			<h4><u><i>Confirm this transaction in your wallet!</i></u></h4>
+			<p>Please grant ${WRAP_NAME} allowance.</p>
+			<div><strong>Confirm this transaction in your wallet!</strong></div>
 		`);
 		let _tr = await _WRAP.approve(DEPOSITOR,_oamt);
 		console.log(_tr);
 		notice(`
 			<h3>Submitting Approval Transaction!</h3>
-			<h4><a target="_blank" href="${EXPLORE}/tx/${_tr.hash}">View on Explorer</a></h4>
+			<p><a target="_blank" href="${EXPLORE}/tx/${_tr.hash}" class="btn btn-outline">View on Explorer</a></p>
 		`);
 		_tw = await _tr.wait()
 		console.log(_tw)
 		notice(`
 			<h3>Approval Completed!</h3>
-			<br>Spending rights of ${Number(_oamt)/(10**DECIMAL)} ${WRAP_NAME} granted.<br>
-			<h4><a target="_blank" href="${EXPLORE}/tx/${_tr.hash}">View on Explorer</a></h4>
-			<br><br>
-			Please confirm the next step with your wallet provider now.
+			<p>Spending rights of ${Number(_oamt)/(10**DECIMAL)} ${WRAP_NAME} granted.</p>
+			<p><a target="_blank" href="${EXPLORE}/tx/${_tr.hash}" class="btn btn-outline">View on Explorer</a></p>
+			<br><p>Please confirm the next step with your wallet provider now.</p>
 		`);
 	}
 
 	_rdexp = _oamt * STATE.global.base_per_wrap / 10n**18n ;
 
 	notice(`
-		<h3>Order Summary</h3>
-		<b>Redeeming ${WRAP_NAME}</b><br>
-
-		<img style='height:20px;position:relative;top:4px' src="${WRAP_LOGO}"> ${WRAP_NAME} to Redeem: <b>${fornum5(_oamt,DECIMAL)}</b><br>
-		<img style='height:20px;position:relative;top:4px' src="${BASE_LOGO}"> ${VE_NAME} Expected: <b>${fornum5(_rdexp,DECIMAL)}</b><br>
-
-		<h4><u><i>Please Confirm this transaction in your wallet!</i></u></h4>
+		<h3>Redemption Summary</h3>
+		<div class="transaction-summary">
+			<div class="summary-item">
+				<img src="${WRAP_LOGO}" alt="${WRAP_NAME}" style="width:20px;height:20px;">
+				<span>${WRAP_NAME} to Redeem: <strong>${fornum5(_oamt,DECIMAL)}</strong></span>
+			</div>
+			<div class="summary-arrow">↓</div>
+			<div class="summary-item">
+				<img src="${BASE_LOGO}" alt="${VENFT_NAME}" style="width:20px;height:20px;">
+				<span>${VENFT_NAME} Expected: <strong>${fornum5(_rdexp,DECIMAL)}</strong></span>
+			</div>
+		</div>
+		<br><div><strong>Please confirm this transaction in your wallet!</strong></div>
 	`);
+
 	let _tr = await _DEPOSITOR.withdraw(_oamt);
 	console.log(_tr);
+
 	notice(`
-		<h3>Order Submitted!</h3>
-		<h4>Redeeming ${WRAP_NAME}</h4>
-		<img style='height:20px;position:relative;top:4px' src="${WRAP_LOGO}"> ${WRAP_NAME} Redeeming: <b>${fornum5(_oamt,DECIMAL)}</b><br>
-		<img style='height:20px;position:relative;top:4px' src="${BASE_LOGO}"> ${VE_NAME} Expecting: <b>${fornum5(_rdexp,DECIMAL)}</b><br>
-		<h4><a target="_blank" href="${EXPLORE}/tx/${_tr.hash}">View on Explorer</a></h4>
+		<h3>Redemption Submitted!</h3>
+		<p>Redeeming ${WRAP_NAME}...</p>
+		<p><a target="_blank" href="${EXPLORE}/tx/${_tr.hash}" class="btn btn-outline">View on Explorer</a></p>
 	`);
+
 	_tw = await _tr.wait();
 	console.log(_tw)
+
 	notice(`
-		<h3>Order Completed!</h3>
-		<img style='height:20px;position:relative;top:4px' src="${WRAP_LOGO}"> ${WRAP_NAME} Redeemed: <b>${fornum5(_oamt,DECIMAL)}</b><br>
-		<img style='height:20px;position:relative;top:4px' src="${BASE_LOGO}"> ${VE_NAME} Received: <b>${fornum5(_rdexp,DECIMAL)}</b><br>
-		<br><br>
-		<h4><a target="_blank" href="${EXPLORE}/tx/${_tr.hash}">View on Explorer</a></h4>
+		<h3>Redemption Completed!</h3>
+		<div class="transaction-summary">
+			<div class="summary-item">
+				<img src="${WRAP_LOGO}" alt="${WRAP_NAME}" style="width:20px;height:20px;">
+				<span>${WRAP_NAME} Redeemed: <strong>${fornum5(_oamt,DECIMAL)}</strong></span>
+			</div>
+			<div class="summary-item">
+				<img src="${BASE_LOGO}" alt="${VENFT_NAME}" style="width:20px;height:20px;">
+				<span>${VENFT_NAME} Received: <strong>${fornum5(_rdexp,DECIMAL)}</strong></span>
+			</div>
+		</div>
+		<p><a target="_blank" href="${EXPLORE}/tx/${_tr.hash}" class="btn btn-primary">View on Explorer</a></p>
 	`);
 	gubs();
 }
 
+// Legacy staking functions (kept for compatibility)
 async function stake(ismax) {
-	_BASE = new ethers.Contract(BASE, LPABI, signer);
-	_WRAP = new ethers.Contract(WRAP, LPABI, signer);
-	_FARM = new ethers.Contract(FARM, LPABI, signer);
+	// Implementation would go here when staking is enabled
+	notice(`<h3>Staking Coming Soon!</h3><p>Staking features will be available at 500K TVL!</p>`);
+}
+
+async function unstake(ismax) {
+	// Implementation would go here when staking is enabled
+	notice(`<h3>Staking Coming Soon!</h3><p>Staking features will be available at 500K TVL!</p>`);
+}
+
+async function claim() {
+	// Implementation would go here when staking is enabled
+	notice(`<h3>Staking Coming Soon!</h3><p>Staking features will be available at 500K TVL!</p>`);
+}
+
+async function stake(ismax) {
+	notice(`Updating latest balances, allowances and Asset & Vault data..`);
+	await dexstats();
+
+	s_v = new ethers.Contract( STATE.vault.addr , IERC4626, signer );
+	s_a = new ethers.Contract( STATE.asset.addr , IERC4626, signer );
 
 	al = await Promise.all([
-		_WRAP.allowance(window.ethereum.selectedAddress, FARM),
-		_WRAP.balanceOf(window.ethereum.selectedAddress)
+		STATE.asset.allw,
+		STATE.asset.ubal
 	]);
-	al = al.map( el => BigInt(el) );
 
 	_oamt = null;
 
@@ -904,32 +1011,32 @@ async function stake(ismax) {
 
 	else {
 		_oamt = $("stake-amt").value;
-		if(!isFinite(_oamt) || _oamt<1/(10**DECIMAL)){notice(`Invalid ${BASE_NAME} amount!`); return;}
-		_oamt = BigInt(Math.floor(_oamt * (10**DECIMAL)))
+		if(!isFinite(_oamt) || _oamt<1/(10**STATE.asset.deci)){notice(`Invalid ${STATE.asset.symb} amount!`); return;}
+		_oamt = BigInt(Math.floor(_oamt * (10**STATE.asset.deci)))
 	}
 
 
-	if(Number(_oamt)>Number(al[1])) {notice(`<h2>Insufficient Balance!</h2><h3>Desired Amount:</h3>${Number(_oamt)/(10**DECIMAL)}<br><h3>Actual Balance:</h3>${Number(al[1])/(10**DECIMAL)}<br><br><b>Please reduce the amount and retry again, or accumulate some more ${WRAP_NAME}.`);return}
+	if(Number(_oamt)>Number(al[1])) {notice(`<h2>Insufficient Balance!</h2><h3>Desired Amount:</h3>${Number(_oamt)/(10**STATE.asset.deci)}<br><h3>Actual Balance:</h3>${Number(al[1])/(10**STATE.asset.deci)}<br><br><b>Please reduce the amount and retry again, or accumulate some more ${STATE.asset.symb}.`);return}
 
 	if(Number(_oamt)>Number(al[0])){
 		notice(`
 			<h3>Approval required</h3>
-			Please grant ${WRAP_NAME} allowance.<br><br>
+			Please grant ${STATE.vault.symb} vault required allowance to spend your ${STATE.asset.symb}.<br><br>
 			<h4><u><i>Confirm this transaction in your wallet!</i></u></h4>
 		`);
 		//let _tr = await _WRAP.approve(FARM,_oamt);
-		let _tr = await _WRAP.approve(FARM, ethers.constants.MaxUint256);
+		let _tr = await s_a.approve(STATE.vault.addr, ethers.constants.MaxUint256);
 		console.log(_tr);
 		notice(`
 			<h3>Submitting Approval Transaction!</h3>
-			<h4><a target="_blank" href="${EXPLORE}/tx/${_tr.hash}">View on Explorer</a></h4>
+			Transaction hash: ${_tr.hash}
 		`);
 		_tw = await _tr.wait()
 		console.log(_tw)
 		notice(`
 			<h3>Approval Completed!</h3>
-			<br>Spending rights of ${Number(_oamt)/(10**DECIMAL)} ${WRAP_NAME} granted.<br>
-			<h4><a target="_blank" href="${EXPLORE}/tx/${_tr.hash}">View on Explorer</a></h4>
+			<br>Spending rights of ${Number(_oamt)/(10**STATE.asset.deci)} ${STATE.asset.symb} granted.<br>
+			Transaction hash: ${_tr.hash}
 			<br><br>
 			Please confirm the next step with your wallet provider now.
 		`);
@@ -937,36 +1044,42 @@ async function stake(ismax) {
 
 	notice(`
 		<h3>Order Summary</h3>
-		<b>Staking ${WRAP_NAME}</b><br>
-		<img style='height:20px;position:relative;top:4px' src="${WRAP_LOGO}"> ${WRAP_NAME} to Stake: <b>${fornum5(_oamt,DECIMAL)}</b><br>
+		<b>Staking ${STATE.asset.symb}</b><br>
+		${STATE.asset.symb} to Stake: <b>${fornum5(_oamt,STATE.asset.deci)}</b><br>
+		${STATE.vault.symb} expected: <b>${fornum5( Number(_oamt) / STATE.vault.ratio , STATE.asset.deci)}</b>
 		<h4><u><i>Please Confirm this transaction in your wallet!</i></u></h4>
 	`);
-	let _tr = await (ismax ? _FARM.depositAll() : _FARM.deposit(_oamt));
+	let _tr = await s_v.deposit(_oamt, window.ethereum.selectedAddress);
 	console.log(_tr);
 	notice(`
 		<h3>Order Submitted!</h3>
-		<h4>Staking ${WRAP_NAME}</h4>
-		<img style='height:20px;position:relative;top:4px' src="${WRAP_LOGO}"> ${WRAP_NAME} Staking: <b>${fornum5(_oamt,DECIMAL)}</b><br>
-		<h4><a target="_blank" href="${EXPLORE}/tx/${_tr.hash}">View on Explorer</a></h4>
+		<h4>Staking ${STATE.asset.symb}</h4>
+		${STATE.vault.symb} expected: <b>${fornum5( Number(_oamt) / STATE.vault.ratio , STATE.asset.deci)}</b>
+		${STATE.asset.symb} Staking: <b>${fornum5(_oamt,STATE.asset.deci)}</b>
+		<br><br>Transaction hash: ${_tr.hash}
 	`);
 	_tw = await _tr.wait();
 	console.log(_tw)
 	notice(`
 		<h3>Order Completed!</h3>
-		<img style='height:20px;position:relative;top:4px' src="${BASE_LOGO}"> ${WRAP_NAME} Staked: <b>${fornum5(_oamt,DECIMAL)}</b><br>
-		<br><br>
-		<h4><a target="_blank" href="${EXPLORE}/tx/${_tr.hash}">View on Explorer</a></h4>
+		${STATE.asset.symb} Staked: <b>${fornum5(_oamt,STATE.asset.deci)}</b>
+		${STATE.vault.symb} expected: <b>${fornum5( Number(_oamt) / STATE.vault.ratio , STATE.asset.deci)}</b>
+		<br><br>Transaction hash: ${_tr.hash}
 	`);
 	gubs();
 }
 
 async function unstake(ismax) {
-	_FARM = new ethers.Contract(FARM, LPABI,signer);
+	notice(`Updating latest balances, allowances and Asset & Vault data..`);
+	await dexstats();
+
+	s_v = new ethers.Contract( STATE.vault.addr , IERC4626, signer );
+	s_a = new ethers.Contract( STATE.asset.addr , IERC4626, signer );
 
 	al = await Promise.all([
-		_FARM.balanceOf(window.ethereum.selectedAddress)
+		STATE.vault.ubal
 	]);
-	al = al.map( el => BigInt(el) );
+
 
 	_oamt = null;
 
@@ -975,76 +1088,303 @@ async function unstake(ismax) {
 	}
 	else {
 		_oamt = $("unstake-amt").value;
-		if(!isFinite(_oamt)){notice(`Invalid ${WRAP_NAME} amount!`); return;}
-		_oamt = BigInt(Math.floor(_oamt * (10**DECIMAL)));
+		if(!isFinite(_oamt)){notice(`Invalid ${STATE.vault.symb} amount!`); return;}
+		_oamt = BigInt(Math.floor(_oamt * (10**STATE.vault.deci)));
 	}
 
-	if(Number(_oamt)>Number(al[1])) {notice(`<h2>Insufficient Staked Balance!</h2><h3>Desired Amount:</h3>${Number(_oamt)/(10**DECIMAL)}<br><h3>Actual Staked Balance:</h3>${al[1]/(10**DECIMAL)}<br><br><b>Please reduce the amount and retry again, or Stake some more ${WRAP_NAME}.`); return}
+	if(Number(_oamt)>Number(al[1])) {notice(`<h2>Insufficient Staked Balance!</h2><h3>Desired Amount:</h3>${Number(_oamt)/(10**STATE.vault.deci)}<br><h3>Actual Staked Balance:</h3>${al[1]/(10**STATE.vault.deci)}<br><br><b>Please reduce the amount and retry again, or Stake some more ${WRAP_NAME}.`); return}
 
 	notice(`
 		<h3>Order Summary</h3>
-		<b>Withdrawing ${WRAP_NAME}</b><br>
+		<b>Withdrawing ${STATE.vault.symb}</b><br>
 
-		<img style='height:20px;position:relative;top:4px' src="${WRAP_LOGO}"> ${WRAP_NAME} to Redeem: <b>${fornum5(_oamt,DECIMAL)}</b><br>
-		<img style='height:20px;position:relative;top:4px' src="${BASE_LOGO}"> ${BASE_NAME} Expected: <b>${fornum5(_oamt,DECIMAL)}</b><br>
+		${STATE.vault.symb} to redeem: <b>${fornum5(_oamt,STATE.vault.deci)}</b><br>
+		${STATE.asset.symb} expected: <b>${fornum5( Number(_oamt) * STATE.vault.ratio , STATE.vault.deci)}</b><br>
 
 		<h4><u><i>Please Confirm this transaction in your wallet!</i></u></h4>
 	`);
-	let _tr = await (ismax ? _FARM.withdrawAll() : _FARM.withdraw(_oamt));
+	let _tr = await s_v.redeem(_oamt, window.ethereum.selectedAddress, window.ethereum.selectedAddress);
 	console.log(_tr);
 	notice(`
 		<h3>Order Submitted!</h3>
-		<h4>Unstaking ${WRAP_NAME}</h4>
-		<img style='height:20px;position:relative;top:4px' src="${WRAP_LOGO}"> ${WRAP_NAME} Unstaking: <b>${fornum5(_oamt,DECIMAL)}</b><br>
-		<h4><a target="_blank" href="${EXPLORE}/tx/${_tr.hash}">View on Explorer</a></h4>
+		<h4>Unstaking ${STATE.vault.symb}</h4>
+		${STATE.vault.symb} to redeem: <b>${fornum5(_oamt,STATE.vault.deci)}</b><br>
+		${STATE.asset.symb} expected: <b>${fornum5( Number(_oamt) * STATE.vault.ratio , STATE.vault.deci)}</b>
+		<br><br>Transaction hash: ${_tr.hash}
 	`);
 	_tw = await _tr.wait();
 	console.log(_tw)
 	notice(`
 		<h3>Order Completed!</h3>
-		<img style='height:20px;position:relative;top:4px' src="${WRAP_LOGO}"> ${WRAP_NAME} Unstaked: <b>${fornum5(_oamt,DECIMAL)}</b><br>
-		<br><br>
-		<h4><a target="_blank" href="${EXPLORE}/tx/${_tr.hash}">View on Explorer</a></h4>
+		${STATE.vault.symb} to redeem: <b>${fornum5(_oamt,STATE.vault.deci)}</b><br>
+		${STATE.asset.symb} expected: <b>${fornum5( Number(_oamt) * STATE.vault.ratio , STATE.vault.deci)}</b>
+		<br><br>Transaction hash: ${_tr.hash}
 	`);
 	gubs();
 }
 
-async function claim() {
-	_FARM = new ethers.Contract(FARM, LPABI,signer);
-	_VOTER = new ethers.Contract(VOTER, ["function claimRewards(address[],address[][])"],signer);
 
-	_earned = await Promise.all([
-		_FARM.earned(TEARNED[0], window.ethereum.selectedAddress),
-		_FARM.earned(TEARNED[1], window.ethereum.selectedAddress),
-	]);
-	al = al.map( el => BigInt(el) );
-
-	if(Number(_earned[0]) == 0 && Number(_earned[1]) == 0 ) {notice(`<h3>You dont have any pending rewards!</h3> Stake some ${WRAP_NAME} to earn more!`); return;}
-
-	notice(`
-		<h3>Order Summary</h3>
-		<b>Claiming ${TEARNED_NAME.join("+")} rewards</b>
-		<br><img style='height:20px;position:relative;top:4px' src="${TEARNED_LOGO[0]}"> <b>${fornum5(_earned[0],18)}</b> ${TEARNED_NAME[0]}
-		<br><img style='height:20px;position:relative;top:4px' src="${TEARNED_LOGO[1]}"> <b>${fornum5(_earned[1],18)}</b> ${TEARNED_NAME[1]}
-		<h4><u><i>Please Confirm this transaction in your wallet!</i></u></h4>
-	`);
-	let _tr = await _VOTER.claimRewards([FARM],[TEARNED],{gasLimit:BigInt(1_500_000)});
-	console.log(_tr);
-	notice(`
-		<h3>Order Submitted!</h3>
-		<b>Claiming ${TEARNED_NAME.join("+")} rewards</b>
-		<br><img style='height:20px;position:relative;top:4px' src="${TEARNED_LOGO[0]}"> <b>${fornum5(_earned[0],18)}</b> ${TEARNED_NAME[0]}
-		<br><img style='height:20px;position:relative;top:4px' src="${TEARNED_LOGO[1]}"> <b>${fornum5(_earned[1],18)}</b> ${TEARNED_NAME[1]}
-		<h4><a target="_blank" href="${EXPLORE}/tx/${_tr.hash}">View on Explorer</a></h4>
-	`);
-	_tw = await _tr.wait();
-	console.log(_tw)
-	notice(`
-		<h3>Order Completed!</h3>
-		<b>Claiming ${TEARNED_NAME.join("+")} rewards</b>
-		<br><img style='height:20px;position:relative;top:4px' src="${TEARNED_LOGO[0]}"> <b>${fornum5(_earned[0],18)}</b> ${TEARNED_NAME[0]}
-		<br><img style='height:20px;position:relative;top:4px' src="${TEARNED_LOGO[1]}"> <b>${fornum5(_earned[1],18)}</b> ${TEARNED_NAME[1]}
-		<h4><a target="_blank" href="${EXPLORE}/tx/${_tr.hash}">View on Explorer</a></h4>
-	`);
-	gubs();
+// UI Helper Functions
+function showZapMode() {
+    document.getElementById('zap-mode').classList.remove('hidden');
+    document.getElementById('mint-mode').classList.add('hidden');
+    document.querySelectorAll('.toggle-tab').forEach(tab => tab.classList.remove('active'));
+    event.target.classList.add('active');
 }
+
+function showMintMode() {
+    document.getElementById('zap-mode').classList.add('hidden');
+    document.getElementById('mint-mode').classList.remove('hidden');
+    document.querySelectorAll('.toggle-tab').forEach(tab => tab.classList.remove('active'));
+    event.target.classList.add('active');
+}
+
+function showStakeMode() {
+    document.getElementById('stake-mode').classList.remove('hidden');
+    document.getElementById('unstake-mode').classList.add('hidden');
+    document.querySelectorAll('.toggle-tab').forEach(tab => tab.classList.remove('active'));
+    event.target.classList.add('active');
+}
+
+function showUnstakeMode() {
+    document.getElementById('stake-mode').classList.add('hidden');
+    document.getElementById('unstake-mode').classList.remove('hidden');
+    document.querySelectorAll('.toggle-tab').forEach(tab => tab.classList.remove('active'));
+    event.target.classList.add('active');
+}
+
+function showAllOpportunities() {
+    document.getElementById('opportunities-modal').classList.remove('hidden');
+    populateFullOpportunities();
+}
+
+function hideAllOpportunities() {
+    document.getElementById('opportunities-modal').classList.add('hidden');
+}
+
+function populateFullOpportunities() {
+    const container = document.getElementById('partner-pools-full');
+    container.innerHTML = PARTNER_POOLS.map(pool => `
+        <div class="opportunity-card" onclick="window.open('${pool.link}','_blank')">
+            <div class="opportunity-header">
+                <img src="${pool.platforms[0].icon}" alt="${pool.platforms[0].name}" class="platform-icon">
+                <div class="opportunity-title">
+                    <div class="platform-name">${pool.platforms[0].name}</div>
+                    <div class="platform-type">${pool.platforms[0].subtext}</div>
+                </div>
+            </div>
+            <div class="opportunity-assets">
+                ${pool.tokens.map(token => `
+                    <div class="asset-tag">
+                        <img src="${token.icon}" alt="${token.name}" class="asset-icon">
+                        ${token.name}
+                    </div>
+                `).join('')}
+            </div>
+            <div class="opportunity-rewards">
+                ${pool.rewards.map(reward => `
+                    <div class="reward-tag">
+                        <img src="${reward.icon}" alt="${reward.name}" class="reward-icon">
+                        ${reward.name}
+                    </div>
+                `).join('')}
+            </div>
+            <div class="opportunity-description">${pool.desc[0].maintext}</div>
+        </div>
+    `).join('');
+}
+
+// Function to fetch Spectra APY from API
+async function fetchSpectraAPY() {
+    try {
+        const response = await fetch('https://app.spectra.finance/api/v1/sonic/pools');
+        const pools = await response.json();
+
+        // Find the eliteRingsScUSD pool
+        const eliteRingsPool = pools.find(pool =>
+            pool.underlying &&
+            pool.underlying.address === '0xd4aa386bfceeedd9de0875b3ba07f51808592e22'
+        );
+
+        if (eliteRingsPool && eliteRingsPool.pools && eliteRingsPool.pools[0]) {
+            const apy = eliteRingsPool.pools[0].lpApy?.total;
+            if (apy !== null && apy !== undefined) {
+                const yieldElement = document.getElementById('yield-spectra');
+                if (yieldElement) {
+                    yieldElement.textContent = `${apy.toFixed(2)}% APY`;
+                    // Store APR for sorting
+                    window.spectraAPR = apy;
+                }
+            }
+        }
+    } catch (error) {
+        console.log('Could not fetch Spectra APY:', error);
+        // Keep the default ~12.5% APY if API call fails
+    }
+}
+
+// Function to fetch Equalizer APR from API
+async function fetchEqualizerAPR() {
+    try {
+        const response = await fetch('https://eqapi-sonic-prod-ltanm.ondigitalocean.app/sonic/v4/pairs');
+        const data = await response.json();
+
+        if (data.success && data.data) {
+            // Find all active pools with eliteRingsScUSD and TVL > $1,000
+            const eliteRingsPools = Object.values(data.data).filter(pool => {
+                return pool.tags &&
+                       pool.tags.includes('active') &&
+                       parseFloat(pool.tvlUsd) >= 1000 &&
+                       (pool.token0?.address === '0xd4aA386bfCEEeDd9De0875B3BA07f51808592e22' ||
+                        pool.token1?.address === '0xd4aA386bfCEEeDd9De0875B3BA07f51808592e22');
+            });
+
+            if (eliteRingsPools.length > 0) {
+                // Find the highest APR among all qualifying eliteRingsScUSD pools
+                const highestAPR = Math.max(...eliteRingsPools.map(pool => parseFloat(pool.apr) || 0));
+
+                const yieldElement = document.getElementById('yield-equalizer');
+                if (yieldElement && highestAPR > 0) {
+                    yieldElement.textContent = `Up to ${highestAPR.toFixed(2)}% APR`;
+                    // Store APR for sorting
+                    window.equalizerAPR = highestAPR;
+                }
+            }
+        }
+    } catch (error) {
+        console.log('Could not fetch Equalizer APR:', error);
+        // Keep the default if API call fails
+    }
+}
+
+// Function to fetch Impermax APR from API
+async function fetchImpermaxAPR() {
+    try {
+        // Try to fetch from Impermax API - common endpoints
+        const endpoints = [
+            'https://sonic.impermax.finance/api/v1/lending-pools',
+            'https://sonic.impermax.finance/api/lending-pools',
+            'https://sonic.impermax.finance/api/v1/pools',
+            'https://sonic.impermax.finance/api/pools'
+        ];
+
+        let impermaxData = null;
+
+        for (const endpoint of endpoints) {
+            try {
+                const response = await fetch(endpoint);
+                if (response.ok) {
+                    impermaxData = await response.json();
+                    break;
+                }
+            } catch (e) {
+                console.log(`Failed to fetch from ${endpoint}:`, e);
+            }
+        }
+
+        if (impermaxData) {
+            // Look for the eliteRingsScUSD pool data
+            const eliteRingsPool = impermaxData.find(pool =>
+                pool.underlying?.address === '0xd4aA386bfCEEeDd9De0875B3BA07f51808592e22' ||
+                pool.token?.address === '0xd4aA386bfCEEeDd9De0875B3BA07f51808592e22' ||
+                pool.address === '0x98cfa5addcb937c205e35d2bef0885f969dcf958'
+            );
+
+            if (eliteRingsPool && eliteRingsPool.supplyAPR !== undefined) {
+                const apr = parseFloat(eliteRingsPool.supplyAPR);
+                const yieldElement = document.getElementById('yield-impermax');
+                if (yieldElement && apr > 0) {
+                    yieldElement.textContent = `${apr.toFixed(2)}% APY`;
+                    window.impermaxAPR = apr;
+                }
+            }
+        }
+
+        // If no API data found, don't display any APR
+        if (!impermaxData || !eliteRingsPool) {
+            const yieldElement = document.getElementById('yield-impermax');
+            if (yieldElement) {
+                yieldElement.textContent = ``;
+                window.impermaxAPR = 0;
+            }
+        }
+
+    } catch (error) {
+        console.log('Could not fetch Impermax APR:', error);
+        // Don't display any APR if API fails
+        const yieldElement = document.getElementById('yield-impermax');
+        if (yieldElement) {
+            yieldElement.textContent = ``;
+            window.impermaxAPR = 0;
+        }
+    }
+}
+
+// Function to sort opportunities by yield
+function sortOpportunitiesByYield() {
+    const container = document.getElementById('partner-pools-container');
+    if (!container) return;
+
+    // Get all opportunity elements
+    const opportunities = Array.from(container.children);
+
+    // Sort opportunities by APR (highest first)
+    opportunities.sort((a, b) => {
+        const aYield = a.querySelector('.opportunity-yield').textContent;
+        const bYield = b.querySelector('.opportunity-yield').textContent;
+
+        // Extract APR numbers from yield text
+        const aAPR = parseFloat(aYield.match(/[\d.]+/)?.[0] || 0);
+        const bAPR = parseFloat(bYield.match(/[\d.]+/)?.[0] || 0);
+
+        return bAPR - aAPR; // Sort descending (highest first)
+    });
+
+    // Re-append sorted elements
+    opportunities.forEach(opportunity => {
+        container.appendChild(opportunity);
+    });
+}
+
+// At the end of the file, attach UI functions to window for HTML access
+window.showZapMode = showZapMode;
+window.showMintMode = showMintMode;
+window.showAllOpportunities = showAllOpportunities;
+window.hideAllOpportunities = hideAllOpportunities;
+window.populateFullOpportunities = populateFullOpportunities;
+window.zap = zap;
+window.mint = mint;
+window.redeem = redeem;
+window.stake = stake;
+window.unstake = unstake;
+window.claim = claim;
+
+// Ensure DOMContentLoaded handler populates opportunities and fetches APRs
+// (If not already present, add this block)
+document.addEventListener('DOMContentLoaded', function() {
+    paintStatic();
+    initializeModernUI();
+
+    // Populate initial opportunities preview
+    const container = document.getElementById('partner-pools-container');
+    if (container) {
+        container.innerHTML = PARTNER_POOLS.slice(0, 3).map(pool => `
+            <div class="opportunity-preview" onclick="window.open('${pool.link}','_blank')">
+                <div class="opportunity-platform">
+                    <img src="${pool.platforms[0].icon}" alt="${pool.platforms[0].name}" class="platform-icon">
+                    <span>${pool.platforms[0].name}</span>
+                </div>
+                <div class="opportunity-yield" id="yield-${pool.platforms[0].name.toLowerCase()}"></div>
+            </div>
+        `).join('');
+    }
+
+    // Fetch all APY/APR data and then sort by highest yield
+    Promise.all([
+        fetchSpectraAPY(),
+        fetchEqualizerAPR(),
+        fetchImpermaxAPR()
+    ]).then(() => {
+        sortOpportunitiesByYield();
+    });
+});
