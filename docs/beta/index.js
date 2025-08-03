@@ -1380,6 +1380,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Fetch all APY/APR data and then sort by highest yield
+    /*
     Promise.all([
         fetchSpectraAPY(),
         fetchEqualizerAPR(),
@@ -1387,4 +1388,5 @@ document.addEventListener('DOMContentLoaded', function() {
     ]).then(() => {
         sortOpportunitiesByYield();
     });
+    */
 });
