@@ -803,7 +803,7 @@ return;
 
 async function redeem(ismax) {
 	if( (Date.now() % 604800e3) > (604800e3 - 86400e3) ) {
-		notice(`Redeeming ${WRAP_NAME} to ${VE_NAME} is not available on Wednesdays..<br><br>Please try tomorrow!`);
+		notice(`Redeeming ${WRAP_NAME} to ${VENFT_NAME} is not available on Wednesdays..<br><br>Please try tomorrow!`);
 	}
 
 	_BASE = new ethers.Contract(BASE, LPABI, signer);
@@ -860,7 +860,7 @@ async function redeem(ismax) {
 		<b>Redeeming ${WRAP_NAME}</b><br>
 
 		<img style='height:20px;position:relative;top:4px' src="${WRAP_LOGO}"> ${WRAP_NAME} to Redeem: <b>${fornum5(_oamt,DECIMAL)}</b><br>
-		<img style='height:20px;position:relative;top:4px' src="${BASE_LOGO}"> ${VE_NAME} Expected: <b>${fornum5(_rdexp,DECIMAL)}</b><br>
+		<img style='height:20px;position:relative;top:4px' src="${BASE_LOGO}"> ${VENFT_NAME} Expected: <b>${fornum5(_rdexp,DECIMAL)}</b><br>
 
 		<h4><u><i>Please Confirm this transaction in your wallet!</i></u></h4>
 	`);
@@ -870,7 +870,7 @@ async function redeem(ismax) {
 		<h3>Order Submitted!</h3>
 		<h4>Redeeming ${WRAP_NAME}</h4>
 		<img style='height:20px;position:relative;top:4px' src="${WRAP_LOGO}"> ${WRAP_NAME} Redeeming: <b>${fornum5(_oamt,DECIMAL)}</b><br>
-		<img style='height:20px;position:relative;top:4px' src="${BASE_LOGO}"> ${VE_NAME} Expecting: <b>${fornum5(_rdexp,DECIMAL)}</b><br>
+		<img style='height:20px;position:relative;top:4px' src="${BASE_LOGO}"> ${VENFT_NAME} Expecting: <b>${fornum5(_rdexp,DECIMAL)}</b><br>
 		<h4><a target="_blank" href="${EXPLORE}/tx/${_tr.hash}">View on Explorer</a></h4>
 	`);
 	_tw = await _tr.wait();
@@ -878,7 +878,7 @@ async function redeem(ismax) {
 	notice(`
 		<h3>Order Completed!</h3>
 		<img style='height:20px;position:relative;top:4px' src="${WRAP_LOGO}"> ${WRAP_NAME} Redeemed: <b>${fornum5(_oamt,DECIMAL)}</b><br>
-		<img style='height:20px;position:relative;top:4px' src="${BASE_LOGO}"> ${VE_NAME} Received: <b>${fornum5(_rdexp,DECIMAL)}</b><br>
+		<img style='height:20px;position:relative;top:4px' src="${BASE_LOGO}"> ${VENFT_NAME} Received: <b>${fornum5(_rdexp,DECIMAL)}</b><br>
 		<br><br>
 		<h4><a target="_blank" href="${EXPLORE}/tx/${_tr.hash}">View on Explorer</a></h4>
 	`);
