@@ -677,7 +677,7 @@ async function mint(_id, _idi) {
 
 		<img style='height:20px;position:relative;top:4px' src="${BASE_LOGO}"> NFT Token ID: <u>#<b>${_id}</b></u><br>
 		<img style='height:20px;position:relative;top:4px' src="${BASE_LOGO}"> Amount Locked: <u>${ fornum5(_q[1],BASE_DEC).toLocaleString() } ${BASE_NAME}</u><br>
-		<img style='height:20px;position:relative;top:4px' src="https://ftm.guru/icons/lock.svg">Time to Unlock: <u>${Number(_q[2])} Weeks</u> from now<br><br>
+		<img style='height:20px;position:relative;top:4px' src="https://ftm1337.eliteness.network/icons/lock.svg">Time to Unlock: <u>${Number(_q[2])} Weeks</u> from now<br><br>
 		<b>Expected to Get:</b><br>
 		<img style='height:20px;position:relative;top:4px' src="${WRAP_LOGO}"> <u>${ fornum5(_q[0],WRAP_DEC).toLocaleString() } ${WRAP_NAME}</u><br><br><br><br>
 		<h4><u><i>Please Confirm this transaction in your wallet!</i></u></h4>
